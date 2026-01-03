@@ -3,7 +3,7 @@
 A comprehensive travel planning application built with React Native CLI (mobile) and FastAPI (backend) with PostgreSQL database.
 
 ## 🎨 Design Theme
-- **Colors**: Black, White, and Red
+- **Colors**: White, and Red
 - **Architecture**: Clean, modern, and user-friendly
 
 ## 📱 Mobile App (React Native CLI)
