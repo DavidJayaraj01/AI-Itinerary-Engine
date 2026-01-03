@@ -9,9 +9,23 @@ const { errorHandler, notFound } = require('./middleware/error.middleware');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// CORS Configuration - Handle multiple origins correctly
+const allowedOrigins = process.env.CORS_ORIGIN 
+  ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
+  : ['*'];
+
 // Middleware
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || '*',
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.includes('*') || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
 }));
 

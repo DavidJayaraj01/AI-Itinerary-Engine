@@ -5,7 +5,7 @@ const { generateToken, AppError } = require('../utils/helpers');
 const authService = {
   // Register new user
   register: async (userData) => {
-    const { email, password, first_name, last_name, phone, city, country } = userData;
+    const { email, password, first_name, last_name, phone, city, country, additional_info } = userData;
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
@@ -28,6 +28,7 @@ const authService = {
         phone,
         city,
         country,
+        additional_info,
         password_hash,
       },
       select: {

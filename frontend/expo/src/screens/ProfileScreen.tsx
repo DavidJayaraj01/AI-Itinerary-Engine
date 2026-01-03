@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -11,20 +11,36 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import {COLORS, SIZES, SHADOWS} from '../constants/theme';
 import CustomInput from '../components/inputs/CustomInput';
 import PrimaryButton from '../components/buttons/PrimaryButton';
+import {useAuth} from '../contexts/AuthContext';
 
 const ProfileScreen = ({navigation}: any) => {
+  const {user, logout: authLogout} = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [darkModeEnabled, setDarkModeEnabled] = useState(false);
 
   const [profileData, setProfileData] = useState({
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    phone: '+1 (555) 123-4567',
-    city: 'New York',
-    country: 'USA',
+    name: '',
+    email: '',
+    phone: '',
+    city: '',
+    country: '',
     language: 'English',
   });
+
+  // Load user data from AuthContext
+  useEffect(() => {
+    if (user) {
+      setProfileData({
+        name: `${user.first_name} ${user.last_name}`,
+        email: user.email || '',
+        phone: user.phone || '',
+        city: user.city || '',
+        country: user.country || '',
+        language: 'English',
+      });
+    }
+  }, [user]);
 
   const updateField = (field: string, value: string) => {
     setProfileData(prev => ({...prev, [field]: value}));
@@ -35,7 +51,8 @@ const ProfileScreen = ({navigation}: any) => {
     // Save profile data
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await authLogout();
     navigation.replace('Login');
   };
 

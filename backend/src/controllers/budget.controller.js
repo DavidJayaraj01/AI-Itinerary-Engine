@@ -19,10 +19,14 @@ const budgetController = {
     }
   },
 
-  // POST /api/budgets
+  // POST /api/budgets OR POST /api/trips/:tripId/budgets
   createBudget: async (req, res, next) => {
     try {
-      const budget = await budgetService.createBudget(req.user.id, req.body);
+      // Support both routes - tripId from params or body
+      const tripId = req.params.tripId ? parseInt(req.params.tripId) : req.body.trip_id;
+      const budgetData = { ...req.body, trip_id: tripId };
+      
+      const budget = await budgetService.createBudget(req.user.id, budgetData);
 
       res.status(201).json({
         success: true,

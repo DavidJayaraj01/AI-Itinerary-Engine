@@ -13,6 +13,7 @@ import {COLORS, SIZES} from '../../constants/theme';
 interface CustomInputProps extends TextInputProps {
   label?: string;
   icon?: string;
+  rightIcon?: React.ReactNode;
   error?: string;
   containerStyle?: ViewStyle;
   iconColor?: string;
@@ -21,6 +22,7 @@ interface CustomInputProps extends TextInputProps {
 const CustomInput: React.FC<CustomInputProps> = ({
   label,
   icon,
+  rightIcon,
   error,
   containerStyle,
   iconColor = COLORS.gray,
@@ -52,6 +54,7 @@ const CustomInput: React.FC<CustomInputProps> = ({
           onBlur={() => setIsFocused(false)}
           {...textInputProps}
         />
+        {rightIcon && <View style={styles.rightIcon}>{rightIcon}</View>}
       </View>
       {error && <Text style={styles.errorText}>{error}</Text>}
     </View>
@@ -97,6 +100,9 @@ const styles = StyleSheet.create({
     fontSize: SIZES.caption,
     color: COLORS.error,
     marginTop: SIZES.xs,
+  },
+  rightIcon: {
+    marginLeft: SIZES.sm,
   },
 });
 

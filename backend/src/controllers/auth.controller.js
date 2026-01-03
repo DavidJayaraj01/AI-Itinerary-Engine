@@ -5,6 +5,7 @@ const authController = {
   // POST /api/auth/register
   register: async (req, res, next) => {
     try {
+      console.log('📝 Registration request body:', JSON.stringify(req.body, null, 2));
       const { user, token } = await authService.register(req.body);
 
       res.status(201).json({
@@ -15,6 +16,7 @@ const authController = {
         },
       });
     } catch (error) {
+      console.error('❌ Registration error:', error.message);
       next(error);
     }
   },

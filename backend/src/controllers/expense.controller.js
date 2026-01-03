@@ -22,10 +22,14 @@ const expenseController = {
     }
   },
 
-  // POST /api/expenses
+  // POST /api/expenses OR POST /api/trips/:tripId/expenses
   createExpense: async (req, res, next) => {
     try {
-      const expense = await expenseService.createExpense(req.user.id, req.body);
+      // Support both routes - tripId from params or body
+      const tripId = req.params.tripId ? parseInt(req.params.tripId) : req.body.trip_id;
+      const expenseData = { ...req.body, trip_id: tripId };
+      
+      const expense = await expenseService.createExpense(req.user.id, expenseData);
 
       res.status(201).json({
         success: true,

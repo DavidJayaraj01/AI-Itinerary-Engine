@@ -6,16 +6,38 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
+  Platform,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import {COLORS, SIZES, SHADOWS} from '../constants/theme';
 import CustomInput from '../components/inputs/CustomInput';
 import PrimaryButton from '../components/buttons/PrimaryButton';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 const CreateTripScreen = ({navigation}: any) => {
   const [place, setPlace] = useState('');
-  const [startDate, setStartDate] = useState('11/15/2023');
-  const [endDate, setEndDate] = useState('');
+  const [startDate, setStartDate] = useState(new Date());
+  const [endDate, setEndDate] = useState(new Date());
+  const [showStartPicker, setShowStartPicker] = useState(false);
+  const [showEndPicker, setShowEndPicker] = useState(false);
+
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
+  };
+
+  const onStartDateChange = (event: any, selectedDate?: Date) => {
+    setShowStartPicker(Platform.OS === 'ios');
+    if (selectedDate) {
+      setStartDate(selectedDate);
+    }
+  };
+
+  const onEndDateChange = (event: any, selectedDate?: Date) => {
+    setShowEndPicker(Platform.OS === 'ios');
+    if (selectedDate) {
+      setEndDate(selectedDate);
+    }
+  };
 
   const suggestions = [
     {
@@ -111,10 +133,19 @@ const CreateTripScreen = ({navigation}: any) => {
               />
               <View style={styles.inputWrapper}>
                 <Text style={styles.inputLabel}>START DATE</Text>
-                <TouchableOpacity style={styles.dateInput}>
-                  <Text style={styles.dateText}>{startDate}</Text>
+                <TouchableOpacity style={styles.dateInput} onPress={() => setShowStartPicker(true)}>
+                  <Text style={styles.dateText}>{formatDate(startDate)}</Text>
                   <Icon name="calendar-outline" size={20} color={COLORS.gray} />
                 </TouchableOpacity>
+                {showStartPicker && (
+                  <DateTimePicker
+                    value={startDate}
+                    mode="date"
+                    display="default"
+                    onChange={onStartDateChange}
+                    minimumDate={new Date()}
+                  />
+                )}
               </View>
             </View>
 
@@ -127,10 +158,19 @@ const CreateTripScreen = ({navigation}: any) => {
               />
               <View style={styles.inputWrapper}>
                 <Text style={styles.inputLabel}>END DATE</Text>
-                <TouchableOpacity style={styles.dateInput}>
-                  <Text style={styles.dateText}>mm/dd/yyyy</Text>
+                <TouchableOpacity style={styles.dateInput} onPress={() => setShowEndPicker(true)}>
+                  <Text style={styles.dateText}>{formatDate(endDate)}</Text>
                   <Icon name="calendar-outline" size={20} color={COLORS.gray} />
                 </TouchableOpacity>
+                {showEndPicker && (
+                  <DateTimePicker
+                    value={endDate}
+                    mode="date"
+                    display="default"
+                    onChange={onEndDateChange}
+                    minimumDate={startDate}
+                  />
+                )}
               </View>
             </View>
           </View>

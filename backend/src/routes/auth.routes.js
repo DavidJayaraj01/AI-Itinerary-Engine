@@ -14,6 +14,7 @@ const registerValidation = [
   body('phone').optional().trim(),
   body('city').optional().trim(),
   body('country').optional().trim(),
+  body('additional_info').optional().trim(),
 ];
 
 const loginValidation = [
