@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -6,66 +6,59 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
+  ActivityIndicator,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/Ionicons';
+import {Ionicons as Icon} from '@expo/vector-icons';
 import {COLORS, SIZES, SHADOWS} from '../constants/theme';
+import {cityService} from '../api/services/city.service';
 
 const CitySearchScreen = ({navigation}: any) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedFilter, setSelectedFilter] = useState('all');
+  const [cities, setCities] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
 
-  const cities = [
-    {
-      id: 1,
-      name: 'Kyoto',
-      country: 'Japan',
-      costIndex: '$$$',
-      popularity: 'High',
-      color: '#D4A574',
-    },
-    {
-      id: 2,
-      name: 'Paris',
-      country: 'France',
-      costIndex: '$$$$',
-      popularity: 'Very High',
-      color: '#FFB84D',
-    },
-    {
-      id: 3,
-      name: 'Bali',
-      country: 'Indonesia',
-      costIndex: '$$',
-      popularity: 'High',
-      color: '#A8C4A0',
-    },
-    {
-      id: 4,
-      name: 'New York',
-      country: 'USA',
-      costIndex: '$$$$',
-      popularity: 'Very High',
-      color: '#C4B896',
-    },
-    {
-      id: 5,
-      name: 'Barcelona',
-      country: 'Spain',
-      costIndex: '$$$',
-      popularity: 'High',
-      color: '#FFD4A3',
-    },
-    {
-      id: 6,
-      name: 'Dubai',
-      country: 'UAE',
-      costIndex: '$$$$',
-      popularity: 'High',
-      color: '#D4C5A0',
-    },
-  ];
+  useEffect(() => {
+    // Clear previous timeout
+    if (searchTimeout) {
+      clearTimeout(searchTimeout);
+    }
 
-  const regions = ['All', 'Europe', 'Asia', 'Americas', 'Africa', 'Oceania'];
+    // Debounce search
+    if (searchQuery.length >= 2) {
+      const timeout = setTimeout(() => {
+        searchCities(searchQuery);
+      }, 500);
+      setSearchTimeout(timeout);
+    } else {
+      setCities([]);
+    }
+
+    return () => {
+      if (searchTimeout) {
+        clearTimeout(searchTimeout);
+      }
+    };
+  }, [searchQuery]);
+
+  const searchCities = async (query: string) => {
+    try {
+      setLoading(true);
+      const response = await cityService.searchCities(query);
+      if (response.success && response.data) {
+        setCities(response.data);
+      }
+    } catch (error) {
+      console.error('Error searching cities:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getRandomColor = (index: number) => {
+    const colors = ['#D4A574', '#FFB84D', '#A8C4A0', '#C4B896', '#FFD4A3', '#D4C5A0'];
+    return colors[index % colors.length];
+  };
 
   return (
     <View style={styles.container}>
@@ -84,82 +77,73 @@ const CitySearchScreen = ({navigation}: any) => {
         />
         <TextInput
           style={styles.searchInput}
-          placeholder="Search cities..."
+          placeholder="Search for cities (min 2 characters)..."
           placeholderTextColor={COLORS.placeholder}
           value={searchQuery}
           onChangeText={setSearchQuery}
+          autoCapitalize="none"
+          autoCorrect={false}
         />
-        {searchQuery.length > 0 && (
+        {loading ? (
+          <ActivityIndicator size="small" color={COLORS.red} />
+        ) : searchQuery.length > 0 ? (
           <TouchableOpacity onPress={() => setSearchQuery('')}>
             <Icon name="close-circle" size={20} color={COLORS.gray} />
           </TouchableOpacity>
-        )}
+        ) : null}
       </View>
-
-      {/* Region Filters */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.filterContainer}>
-        {regions.map(region => (
-          <TouchableOpacity
-            key={region}
-            style={[
-              styles.filterChip,
-              selectedFilter === region.toLowerCase() && styles.filterChipActive,
-            ]}
-            onPress={() => setSelectedFilter(region.toLowerCase())}>
-            <Text
-              style={[
-                styles.filterChipText,
-                selectedFilter === region.toLowerCase() &&
-                  styles.filterChipTextActive,
-              ]}>
-              {region}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
 
       {/* Cities List */}
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}>
-        {cities.map(city => (
-          <TouchableOpacity key={city.id} style={styles.cityCard}>
-            <View style={[styles.cityImage, {backgroundColor: city.color}]}>
-              <Icon name="location" size={28} color={COLORS.white} />
-            </View>
+        {searchQuery.length < 2 ? (
+          <View style={styles.emptyState}>
+            <Icon name="search-outline" size={64} color={COLORS.lightGray} />
+            <Text style={styles.emptyTitle}>Search for cities</Text>
+            <Text style={styles.emptySubtitle}>
+              Type at least 2 characters to start searching
+            </Text>
+          </View>
+        ) : cities.length === 0 && !loading ? (
+          <View style={styles.emptyState}>
+            <Icon name="location-outline" size={64} color={COLORS.lightGray} />
+            <Text style={styles.emptyTitle}>No cities found</Text>
+            <Text style={styles.emptySubtitle}>
+              Try searching with a different name
+            </Text>
+          </View>
+        ) : (
+          cities.map((city, index) => (
+            <TouchableOpacity key={city.id || index} style={styles.cityCard}>
+              <View style={[styles.cityImage, {backgroundColor: getRandomColor(index)}]}>
+                <Icon name="location" size={28} color={COLORS.white} />
+              </View>
 
-            <View style={styles.cityInfo}>
-              <Text style={styles.cityName}>{city.name}</Text>
-              <Text style={styles.cityCountry}>{city.country}</Text>
+              <View style={styles.cityInfo}>
+                <Text style={styles.cityName}>{city.name}</Text>
+                <Text style={styles.cityCountry}>{city.country}</Text>
 
-              <View style={styles.cityMeta}>
-                <View style={styles.metaItem}>
-                  <Icon
-                    name="cash-outline"
-                    size={14}
-                    color={COLORS.textSecondary}
-                  />
-                  <Text style={styles.metaText}>{city.costIndex}</Text>
-                </View>
-                <View style={styles.metaItem}>
-                  <Icon
-                    name="trending-up-outline"
-                    size={14}
-                    color={COLORS.textSecondary}
-                  />
-                  <Text style={styles.metaText}>{city.popularity}</Text>
+                <View style={styles.cityMeta}>
+                  <View style={styles.metaItem}>
+                    <Icon
+                      name="globe-outline"
+                      size={14}
+                      color={COLORS.textSecondary}
+                    />
+                    <Text style={styles.metaText}>
+                      Pop: {city.population ? city.population.toLocaleString() : 'N/A'}
+                    </Text>
+                  </View>
                 </View>
               </View>
-            </View>
 
-            <TouchableOpacity style={styles.addButton}>
-              <Icon name="add-circle" size={32} color={COLORS.red} />
+              <TouchableOpacity style={styles.addButton}>
+                <Icon name="add" size={24} color={COLORS.white} />
+              </TouchableOpacity>
             </TouchableOpacity>
-          </TouchableOpacity>
-        ))}
+          ))
+        )}
       </ScrollView>
     </View>
   );
@@ -201,28 +185,29 @@ const styles = StyleSheet.create({
     paddingLeft: SIZES.padding,
     marginBottom: SIZES.md,
   },
-  filterChip: {
-    paddingHorizontal: SIZES.lg,
-    paddingVertical: SIZES.sm,
-    marginRight: SIZES.sm,
-    borderRadius: SIZES.radiusRound,
-    backgroundColor: COLORS.lightGray,
-  },
-  filterChipActive: {
-    backgroundColor: COLORS.black,
-  },
-  filterChipText: {
-    fontSize: SIZES.small,
-    color: COLORS.textSecondary,
-    fontWeight: '500',
-  },
-  filterChipTextActive: {
-    color: COLORS.white,
-    fontWeight: '600',
-  },
   scrollContent: {
     padding: SIZES.padding,
     paddingTop: 0,
+    flexGrow: 1,
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: SIZES.xxl * 2,
+  },
+  emptyTitle: {
+    fontSize: SIZES.h3,
+    fontWeight: 'bold',
+    color: COLORS.black,
+    marginTop: SIZES.lg,
+  },
+  emptySubtitle: {
+    fontSize: SIZES.body,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    marginTop: SIZES.sm,
+    paddingHorizontal: SIZES.xl,
   },
   cityCard: {
     flexDirection: 'row',
@@ -269,7 +254,12 @@ const styles = StyleSheet.create({
     marginLeft: SIZES.xs,
   },
   addButton: {
-    padding: SIZES.xs,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: COLORS.red,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 

@@ -8,7 +8,7 @@ import {
   Image,
   TextInput,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/Ionicons';
+import {Ionicons as Icon} from '@expo/vector-icons';
 import {COLORS, SIZES, SHADOWS} from '../constants/theme';
 
 const DashboardScreen = ({navigation}: any) => {
@@ -57,7 +57,9 @@ const DashboardScreen = ({navigation}: any) => {
               Global<Text style={styles.logoTextRed}>Trotter</Text>
             </Text>
           </View>
-          <TouchableOpacity style={styles.profileButton}>
+          <TouchableOpacity 
+            style={styles.profileButton}
+            onPress={() => navigation.navigate('Profile')}>
             <View style={styles.profileAvatar}>
               <Icon name="person" size={20} color={COLORS.white} />
             </View>

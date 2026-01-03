@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   Dimensions,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/Ionicons';
+import {Ionicons as Icon} from '@expo/vector-icons';
 import {COLORS, SIZES, SHADOWS} from '../constants/theme';
 
 const {width} = Dimensions.get('window');

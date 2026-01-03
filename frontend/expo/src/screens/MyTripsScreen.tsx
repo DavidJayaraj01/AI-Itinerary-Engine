@@ -8,7 +8,7 @@ import {
   ActivityIndicator,
   RefreshControl,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/Ionicons';
+import {Ionicons as Icon} from '@expo/vector-icons';
 import {COLORS, SIZES, SHADOWS} from '../constants/theme';
 import {tripService} from '../api/services/trip.service';
 import {Trip} from '../api/types';
@@ -140,56 +140,57 @@ const MyTripsScreen = ({navigation}: any) => {
             </View>
           ) : (
             filteredTrips.map((trip, index) => (
-              <TouchableOpacity
-                key={trip.id}
-                style={styles.tripCard}
-                onPress={() => navigation.navigate('TripDetails', {tripId: trip.id})}>
-                <View style={[styles.tripImage, {backgroundColor: getTripColor(index)}]}>
-                  <Icon name="location" size={32} color={COLORS.white} />
-                </View>
-
-                <View style={styles.tripContent}>
-                  <View style={styles.tripHeader}>
-                    <Text style={styles.tripName}>{trip.title}</Text>
-                    <TouchableOpacity>
-                      <Icon name="ellipsis-vertical" size={20} color={COLORS.gray} />
-                    </TouchableOpacity>
+              <View key={trip.id} style={styles.tripCard}>
+                <TouchableOpacity
+                  style={styles.tripCardContent}
+                  onPress={() => navigation.navigate('TripDetails', {tripId: trip.id})}>
+                  <View style={[styles.tripImage, {backgroundColor: getTripColor(index)}]}>
+                    <Icon name="location" size={32} color={COLORS.white} />
                   </View>
 
-                  <View style={styles.tripMeta}>
-                    <Icon
-                      name="calendar-outline"
-                      size={14}
-                      color={COLORS.textSecondary}
-                    />
-                    <Text style={styles.tripDates}>
-                      {formatDate(trip.start_date)} - {formatDate(trip.end_date)}
-                    </Text>
-                  </View>
+                  <View style={styles.tripContent}>
+                    <View style={styles.tripHeader}>
+                      <Text style={styles.tripName}>{trip.title}</Text>
+                      <TouchableOpacity>
+                        <Icon name="ellipsis-vertical" size={20} color={COLORS.gray} />
+                      </TouchableOpacity>
+                    </View>
 
-                  <View style={styles.tripFooter}>
-                    {trip.description && (
-                      <View style={styles.descriptionBadge}>
-                        <Icon
-                          name="document-text-outline"
-                          size={14}
-                          color={COLORS.textSecondary}
-                        />
-                        <Text style={styles.descriptionText} numberOfLines={1}>
-                          {trip.description}
-                        </Text>
+                    <View style={styles.tripMeta}>
+                      <Icon
+                        name="calendar-outline"
+                        size={14}
+                        color={COLORS.textSecondary}
+                      />
+                      <Text style={styles.tripDates}>
+                        {formatDate(trip.start_date)} - {formatDate(trip.end_date)}
+                      </Text>
+                    </View>
+
+                    <View style={styles.tripFooter}>
+                      {trip.description && (
+                        <View style={styles.descriptionBadge}>
+                          <Icon
+                            name="document-text-outline"
+                            size={14}
+                            color={COLORS.textSecondary}
+                          />
+                          <Text style={styles.descriptionText} numberOfLines={1}>
+                            {trip.description}
+                          </Text>
+                        </View>
+                      )}
+
+                      <View
+                        style={[
+                          styles.statusBadge,
+                          {backgroundColor: getStatusColor(trip.status)},
+                        ]}>
+                        <Text style={styles.statusText}>{getStatusLabel(trip.status)}</Text>
                       </View>
-                    )}
-
-                    <View
-                      style={[
-                        styles.statusBadge,
-                        {backgroundColor: getStatusColor(trip.status)},
-                      ]}>
-                      <Text style={styles.statusText}>{getStatusLabel(trip.status)}</Text>
                     </View>
                   </View>
-                </View>
+                </TouchableOpacity>
 
                 {/* Action Buttons */}
                 <View style={styles.actionButtons}>
@@ -208,7 +209,7 @@ const MyTripsScreen = ({navigation}: any) => {
                     <Text style={[styles.actionText, {color: COLORS.red}]}>Delete</Text>
                   </TouchableOpacity>
                 </View>
-              </TouchableOpacity>
+              </View>
             ))
           )}
         </ScrollView>
@@ -272,12 +273,15 @@ const styles = StyleSheet.create({
     paddingTop: 0,
   },
   tripCard: {
-    flexDirection: 'row',
     backgroundColor: COLORS.white,
     borderRadius: SIZES.radiusLg,
     marginBottom: SIZES.md,
     padding: SIZES.md,
     ...SHADOWS.medium,
+  },
+  tripCardContent: {
+    flexDirection: 'row',
+    marginBottom: SIZES.sm,
   },
   tripImage: {
     width: 80,
@@ -341,7 +345,9 @@ const styles = StyleSheet.create({
   actionButtons: {
     flexDirection: 'row',
     justifyContent: 'flex-start',
-    marginTop: SIZES.sm,
+    paddingTop: SIZES.sm,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.lightGray,
   },
   actionButton: {
     flexDirection: 'row',
