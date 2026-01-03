@@ -1,0 +1,28 @@
+{
+  "expo": {
+    "name": "ItineraryEngine",
+    "slug": "itinerary-engine",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#4CAF50",
+      "resizeMode": "contain"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#4CAF50"
+      }
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "platforms": ["ios", "android", "web"]
+  }
+}
