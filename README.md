@@ -1,114 +1,151 @@
-# 🌐 GlobeTrotter – Backend API
+# 🌍 GlobeTrotter – AI-Powered Travel Itinerary Engine
 
-This directory contains the **RESTful backend API** for GlobeTrotter, built using **Node.js, Express, PostgreSQL, and Prisma ORM**.
+
+GlobeTrotter is a full-stack, mobile-first travel planning platform that enables users to design, manage, and share personalized travel itineraries. The system integrates intelligent planning, budget tracking, and community sharing into a single seamless experience.
 
 ---
 
-## 🎯 Responsibilities
+## 🎯 Project Overview
 
-The backend handles:
-- Authentication & authorization
-- User and trip management
-- Itinerary and activity logic
+GlobeTrotter helps travelers:
+- Plan multi-city trips
+- Build day-wise itineraries
+- Track budgets and expenses
+- Discover activities and destinations
+- Share trips with the community
+- Generate AI-optimized travel plans
+
+
+---
+
+## 🌟 Vision & Mission
+
+### Vision
+To transform travel planning into an intelligent, interactive, and enjoyable experience by combining structured itineraries, smart recommendations, and social collaboration.
+
+
+### Mission
+To simplify complex travel planning by providing:
+- Personalized itineraries
+- Automated budget estimation
+- Visual timelines
+- Activity discovery
+- Community-driven inspiration
+
+---
+
+## ✨ Key Features
+
+---
+
+- Secure authentication with JWT
+- Multi-city trip planning
+- Day-wise itinerary builder
 - Budget and expense tracking
-- Community features
-- AI service integration
-- Data persistence and security
+- Activity and city discovery
+- AI-powered itinerary generation
+- Community sharing and reactions
+- Calendar and timeline views
 
 ---
+
+## 🏗️ System Architecture
+
+React Native Mobile App
+|
+| REST API (JWT Authentication)
+|
+Node.js + Express Backend
+|
+| Prisma ORM
+|
+PostgreSQL Database
+
+---
+
+---
+
 
 ## 🛠️ Tech Stack
 
+### Frontend
+
+- React Native (Expo)
+- TypeScript
+- Axios
+- React Navigation
+- AsyncStorage
+
+### Backend
+
 - Node.js
 - Express.js
-- PostgreSQL
 - Prisma ORM
+- PostgreSQL
 - JWT Authentication
-- bcrypt, helmet, cors
-- OpenAI API (optional)
+- bcrypt, cors, helmet
 
 ---
 
-## 📂 Folder Structure
+## 📂 Repository Structure
 
-```
-backend/
-├── prisma/
-│ ├── schema.prisma
-│ └── seed.js
-├── src/
-│ ├── controllers/
-│ ├── routes/
-│ ├── services/
-│ ├── middleware/
-│ ├── utils/
-│ └── server.js
-├── .env.example
-└── package.json
-```
+GlobeTrotter/
+├── frontend/
+│   └── expo/
+│       └── README.md
+├── backend/
+│   └── README.md
+└── README.md
+
+
 ---
 
 ## 🚀 Getting Started
 
-### 1. Navigate to backend
-```bash
-cd backend
-```
-
-### 2. Install dependencies
-```bash
-npm install
-```
-### 3. Configure environment variables
-```bash
-cp .env.example .env
-```
-### Edit .env:
-
-```bash
-DATABASE_URL=postgresql://user:password@localhost:5432/globetrotter
-JWT_SECRET=your_secret_key
-PORT=3000
-```
-### 4. Database Setup
-```bash
-npx prisma migrate dev
-npm run seed
-```
-
-### 5. Start Server
-```bash
-npm run dev
-```
----
-
-## 📌 Core API Modules
-
-- /auth – Login & Registration
-- /users – Profile & settings
-- /trips – Trip management
-- /itinerary – Day-wise planning
-- /activities – Activity discovery
-- /budgets – Budget planning
-- /expenses – Expense tracking
-- /community – Posts & reactions
-- /calendar – Events & reminders
-- /ai – AI itinerary services
+Refer to the respective READMEs:
+- 📱 **Frontend Setup** → `frontend/expo/README.md`
+- 🌐 **Backend Setup** → `backend/README.md`
 
 ---
 
-## 🔐 Security
+## 🛣️ Roadmap
 
-- JWT-based authentication
-- Password hashing with bcrypt
-- Input validation
-- Secure headers with helmet
-- CORS protection
+
+### Completed
+- Full REST API
+- Mobile app integration
+- JWT authentication
+- Trip, itinerary & budget management
+- AI itinerary generation
+
+### Planned
+- Offline support
+- Push notifications
+- Maps & weather integration
+- Multi-language support
+
+---
+
+## 🤝 Contributing
+
+1. Fork the repository  
+2. Create a feature branch  
+3. Commit your changes  
+4. Push to your branch  
+5. Open a Pull Request  
 
 ---
 
 ## 📄 License
 
+
 MIT License
 
 ---
+
+- [@DavidJayaraj01](https://github.com/DavidJayaraj01)
+- [@JerwinTitus2006](https://github.com/JerwinTitus2006)
+- [@BaluK345](https://github.com/BaluK345)  
+- [@Liyona21](https://github.com/Liyona21)  
+---
+✨ *Plan Smart. Travel Better.* ✈️🌍
