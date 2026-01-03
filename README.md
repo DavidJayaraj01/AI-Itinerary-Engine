@@ -1,137 +1,109 @@
-# 🌍 GlobeTrotter – AI-Powered Travel Itinerary Engine
+# 🌐 GlobeTrotter – Backend API
 
-GlobeTrotter is a full-stack, mobile-first travel planning platform that enables users to design, manage, and share personalized travel itineraries. The system integrates intelligent planning, budget tracking, and community sharing into a single seamless experience.
-
----
-
-## 🎯 Project Overview
-
-GlobeTrotter helps travelers:
-- Plan multi-city trips
-- Build day-wise itineraries
-- Track budgets and expenses
-- Discover activities and destinations
-- Share trips with the community
-- Generate AI-optimized travel plans
-
-The platform is built with a modern, scalable architecture:
-- 📱 **Mobile App**: React Native (Expo)
-- 🌐 **Backend API**: Node.js + Express
-- 🗄️ **Database**: PostgreSQL
-- 🔗 **ORM**: Prisma
+This directory contains the **RESTful backend API** for GlobeTrotter, built using **Node.js, Express, PostgreSQL, and Prisma ORM**.
 
 ---
 
-## 🌟 Vision & Mission
+## 🎯 Responsibilities
 
-### Vision
-To transform travel planning into an intelligent, interactive, and enjoyable experience by combining structured itineraries, smart recommendations, and social collaboration.
-
-### Mission
-To simplify complex travel planning by providing:
-- Personalized itineraries
-- Automated budget estimation
-- Visual timelines
-- Activity discovery
-- Community-driven inspiration
-
----
-
-## ✨ Key Features
-
-- Secure authentication with JWT
-- Multi-city trip planning
-- Day-wise itinerary builder
+The backend handles:
+- Authentication & authorization
+- User and trip management
+- Itinerary and activity logic
 - Budget and expense tracking
-- Activity and city discovery
-- AI-powered itinerary generation
-- Community sharing and reactions
-- Calendar and timeline views
-
----
-
-## 🏗️ System Architecture
-```
-React Native Mobile App
-|
-| REST API (JWT Authentication)
-|
-Node.js + Express Backend
-|
-| Prisma ORM
-|
-PostgreSQL Database
-```
----
-
+- Community features
+- AI service integration
+- Data persistence and security
 
 ---
 
 ## 🛠️ Tech Stack
 
-### Frontend
-- React Native (Expo)
-- TypeScript
-- Axios
-- React Navigation
-- AsyncStorage
-
-### Backend
 - Node.js
 - Express.js
-- Prisma ORM
 - PostgreSQL
+- Prisma ORM
 - JWT Authentication
-- bcrypt, cors, helmet
+- bcrypt, helmet, cors
+- OpenAI API (optional)
 
 ---
 
-## 📂 Repository Structure
+## 📂 Folder Structure
 
 ```
-GlobeTrotter/
-├── frontend/
-│   └── expo/
-│       └── README.md
-├── backend/
-│   └── README.md
-└── README.md
+backend/
+├── prisma/
+│ ├── schema.prisma
+│ └── seed.js
+├── src/
+│ ├── controllers/
+│ ├── routes/
+│ ├── services/
+│ ├── middleware/
+│ ├── utils/
+│ └── server.js
+├── .env.example
+└── package.json
 ```
-
 ---
 
 ## 🚀 Getting Started
 
-Refer to the respective READMEs:
-- 📱 **Frontend Setup** → `frontend/expo/README.md`
-- 🌐 **Backend Setup** → `backend/README.md`
+### 1. Navigate to backend
+```bash
+cd backend
+```
+
+### 2. Install dependencies
+```bash
+npm install
+```
+### 3. Configure environment variables
+```bash
+cp .env.example .env
+```
+### Edit .env:
+
+```bash
+DATABASE_URL=postgresql://user:password@localhost:5432/globetrotter
+JWT_SECRET=your_secret_key
+PORT=3000
+```
+### 4. Database Setup
+```bash
+npx prisma migrate dev
+npm run seed
+```
+
+### 5. Start Server
+```bash
+npm run dev
+```
+---
+
+## 📌 Core API Modules
+
+- /auth – Login & Registration
+- /users – Profile & settings
+- /trips – Trip management
+- /itinerary – Day-wise planning
+- /activities – Activity discovery
+- /budgets – Budget planning
+- /expenses – Expense tracking
+- /community – Posts & reactions
+- /calendar – Events & reminders
+- /ai – AI itinerary services
 
 ---
 
-## 🛣️ Roadmap
+## 🔐 Security
 
-### Completed
-- Full REST API
-- Mobile app integration
-- JWT authentication
-- Trip, itinerary & budget management
-- AI itinerary generation
-
-### Planned
-- Offline support
-- Push notifications
-- Maps & weather integration
-- Multi-language support
-
----
-
-## 🤝 Contributing
-
-1. Fork the repository  
-2. Create a feature branch  
-3. Commit your changes  
-4. Push to your branch  
-5. Open a Pull Request  
+- JWT-based authentication
+- Password hashing with bcrypt
+- Input validation
+- Secure headers with helmet
+- CORS protection
 
 ---
 
@@ -140,13 +112,3 @@ Refer to the respective READMEs:
 MIT License
 
 ---
-
-## 👥 Team
-- [@DavidJayaraj01](https://github.com/DavidJayaraj01)
-- [@JerwinTitus2006](https://github.com/JerwinTitus2006)
-- [@BaluK345](https://github.com/BaluK345)  
-- [@Liyona21](https://github.com/Liyona21)  
----
-
-✨ *Plan Smart. Travel Better.* ✈️🌍
-
