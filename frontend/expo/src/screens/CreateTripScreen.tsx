@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -7,36 +7,75 @@ import {
   TouchableOpacity,
   Image,
   Platform,
+  FlatList,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import {COLORS, SIZES, SHADOWS} from '../constants/theme';
 import CustomInput from '../components/inputs/CustomInput';
 import PrimaryButton from '../components/buttons/PrimaryButton';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import cityService, {City} from '../api/services/city.service';
+import {tripService} from '../api/services/trip.service';
 
 const CreateTripScreen = ({navigation}: any) => {
   const [place, setPlace] = useState('');
+  const [selectedCity, setSelectedCity] = useState<City | null>(null);
+  const [cities, setCities] = useState<City[]>([]);
+  const [searchingCities, setSearchingCities] = useState(false);
+  const [showCityDropdown, setShowCityDropdown] = useState(false);
   const [startDate, setStartDate] = useState(new Date());
   const [endDate, setEndDate] = useState(new Date());
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
+
+  // Debounce city search
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      if (place.trim().length >= 2) {
+        setSearchingCities(true);
+        try {
+          const response = await cityService.searchCities(place);
+          if (response.success && response.data) {
+            setCities(response.data);
+            setShowCityDropdown(true);
+          }
+        } catch (error) {
+          console.error('Error searching cities:', error);
+        } finally {
+          setSearchingCities(false);
+        }
+      } else {
+        setCities([]);
+        setShowCityDropdown(false);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [place]);
+
+  const selectCity = (city: City) => {
+    setSelectedCity(city);
+    setPlace(city.displayName);
+    setShowCityDropdown(false);
+    setCities([]);
+  };
 
   const formatDate = (date: Date) => {
     return date.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
   };
 
   const onStartDateChange = (event: any, selectedDate?: Date) => {
-    setShowStartPicker(Platform.OS === 'ios');
-    if (selectedDate) {
-      setStartDate(selectedDate);
-    }
+    const currentDate = selectedDate || startDate;
+    setShowStartPicker(false); // Always close on all platforms
+    setStartDate(currentDate);
   };
 
   const onEndDateChange = (event: any, selectedDate?: Date) => {
-    setShowEndPicker(Platform.OS === 'ios');
-    if (selectedDate) {
-      setEndDate(selectedDate);
-    }
+    const currentDate = selectedDate || endDate;
+    setShowEndPicker(false); // Always close on all platforms
+    setEndDate(currentDate);
   };
 
   const suggestions = [
@@ -70,8 +109,56 @@ const CreateTripScreen = ({navigation}: any) => {
     },
   ];
 
-  const handleCreateTrip = () => {
-    navigation.navigate('TripDetails');
+  const [creating, setCreating] = useState(false);
+
+  const handleCreateTrip = async () => {
+    // Validate inputs
+    if (!selectedCity) {
+      Alert.alert('Error', 'Please select a destination city');
+      return;
+    }
+
+    if (endDate < startDate) {
+      Alert.alert('Error', 'End date must be after start date');
+      return;
+    }
+
+    setCreating(true);
+    try {
+      // Create trip data
+      const tripData = {
+        title: `${selectedCity.name} Trip`,
+        description: `Trip to ${selectedCity.displayName}`,
+        start_date: startDate.toISOString().split('T')[0], // Format: YYYY-MM-DD
+        end_date: endDate.toISOString().split('T')[0],
+        status: 'planning' as const,
+      };
+
+      // Save to database
+      const response = await tripService.createTrip(tripData);
+
+      if (response.success && response.data) {
+        Alert.alert(
+          'Success!',
+          'Your trip has been created successfully.',
+          [
+            {
+              text: 'OK',
+              onPress: () => navigation.navigate('TripDetails', { tripId: response.data.id }),
+            },
+          ]
+        );
+      }
+    } catch (error: any) {
+      console.error('Error creating trip:', error);
+      Alert.alert(
+        'Error',
+        error.response?.data?.error || 'Failed to create trip. Please try again.',
+        [{text: 'OK'}]
+      );
+    } finally {
+      setCreating(false);
+    }
   };
 
   return (
@@ -120,6 +207,31 @@ const CreateTripScreen = ({navigation}: any) => {
                 value={place}
                 onChangeText={setPlace}
               />
+              {searchingCities && (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="small" color={COLORS.red} />
+                  <Text style={styles.loadingText}>Searching cities...</Text>
+                </View>
+              )}
+              {showCityDropdown && cities.length > 0 && (
+                <View style={styles.cityDropdown}>
+                  <FlatList
+                    data={cities}
+                    keyExtractor={(item) => item.id}
+                    renderItem={({item}) => (
+                      <TouchableOpacity
+                        style={styles.cityItem}
+                        onPress={() => selectCity(item)}>
+                        <Icon name="location" size={16} color={COLORS.red} />
+                        <Text style={styles.cityName}>{item.displayName}</Text>
+                        <Text style={styles.cityPopulation}>
+                          {item.population > 0 ? `${(item.population / 1000).toFixed(0)}k` : ''}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                  />
+                </View>
+              )}
             </View>
           </View>
 
@@ -137,13 +249,31 @@ const CreateTripScreen = ({navigation}: any) => {
                   <Text style={styles.dateText}>{formatDate(startDate)}</Text>
                   <Icon name="calendar-outline" size={20} color={COLORS.gray} />
                 </TouchableOpacity>
-                {showStartPicker && (
+                {showStartPicker && Platform.OS !== 'web' && (
                   <DateTimePicker
                     value={startDate}
                     mode="date"
                     display="default"
                     onChange={onStartDateChange}
                     minimumDate={new Date()}
+                  />
+                )}
+                {showStartPicker && Platform.OS === 'web' && (
+                  <input
+                    type="date"
+                    value={startDate.toISOString().split('T')[0]}
+                    onChange={(e) => {
+                      setStartDate(new Date(e.target.value));
+                      setShowStartPicker(false);
+                    }}
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      height: '100%',
+                      opacity: 0,
+                    }}
                   />
                 )}
               </View>
@@ -162,13 +292,32 @@ const CreateTripScreen = ({navigation}: any) => {
                   <Text style={styles.dateText}>{formatDate(endDate)}</Text>
                   <Icon name="calendar-outline" size={20} color={COLORS.gray} />
                 </TouchableOpacity>
-                {showEndPicker && (
+                {showEndPicker && Platform.OS !== 'web' && (
                   <DateTimePicker
                     value={endDate}
                     mode="date"
                     display="default"
                     onChange={onEndDateChange}
                     minimumDate={startDate}
+                  />
+                )}
+                {showEndPicker && Platform.OS === 'web' && (
+                  <input
+                    type="date"
+                    value={endDate.toISOString().split('T')[0]}
+                    onChange={(e) => {
+                      setEndDate(new Date(e.target.value));
+                      setShowEndPicker(false);
+                    }}
+                    min={startDate.toISOString().split('T')[0]}
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      height: '100%',
+                      opacity: 0,
+                    }}
                   />
                 )}
               </View>
@@ -208,8 +357,7 @@ const CreateTripScreen = ({navigation}: any) => {
         {/* Create Trip Button */}
         <PrimaryButton
           title="✈ Create Trip"
-          onPress={handleCreateTrip}
-          style={styles.createButton}
+          onPress={handleCreateTrip}          loading={creating}          style={styles.createButton}
         />
       </ScrollView>
     </View>
@@ -363,6 +511,45 @@ const styles = StyleSheet.create({
   },
   createButton: {
     marginTop: SIZES.md,
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: SIZES.sm,
+    paddingHorizontal: SIZES.sm,
+  },
+  loadingText: {
+    marginLeft: SIZES.sm,
+    fontSize: SIZES.small,
+    color: COLORS.textSecondary,
+  },
+  cityDropdown: {
+    position: 'absolute',
+    top: 60,
+    left: 0,
+    right: 0,
+    maxHeight: 200,
+    backgroundColor: COLORS.white,
+    borderRadius: SIZES.radiusMd,
+    ...SHADOWS.medium,
+    zIndex: 1000,
+  },
+  cityItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: SIZES.md,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.lightGray,
+  },
+  cityName: {
+    flex: 1,
+    marginLeft: SIZES.sm,
+    fontSize: SIZES.body,
+    color: COLORS.text,
+  },
+  cityPopulation: {
+    fontSize: SIZES.small,
+    color: COLORS.textSecondary,
   },
 });
 

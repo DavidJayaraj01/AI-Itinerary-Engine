@@ -13,6 +13,7 @@ const communityRoutes = require('./community.routes');
 const calendarRoutes = require('./calendar.routes');
 const savedPlaceRoutes = require('./savedPlace.routes');
 const aiRoutes = require('./ai.routes');
+const cityRoutes = require('./city.routes');
 
 const router = express.Router();
 
@@ -38,5 +39,6 @@ router.use('/community', communityRoutes);
 router.use('/calendar', calendarRoutes);
 router.use('/saved-places', savedPlaceRoutes);
 router.use('/ai', aiRoutes);
+router.use('/cities', cityRoutes);
 
 module.exports = router;

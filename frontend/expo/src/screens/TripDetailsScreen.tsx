@@ -1,44 +1,103 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import {COLORS, SIZES, SHADOWS} from '../constants/theme';
 import PrimaryButton from '../components/buttons/PrimaryButton';
+import {tripService} from '../api/services/trip.service';
+import {Trip} from '../api/types';
 
 const TripDetailsScreen = ({navigation, route}: any) => {
+  const {tripId} = route.params;
   const [activeTab, setActiveTab] = useState('itinerary');
+  const [trip, setTrip] = useState<Trip | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const stops = [
-    {
-      id: 1,
-      city: 'Paris',
-      country: 'France',
-      days: 3,
-      activities: 5,
-      color: '#FFB84D',
-    },
-    {
-      id: 2,
-      city: 'Lyon',
-      country: 'France',
-      days: 2,
-      activities: 3,
-      color: '#FFC870',
-    },
-    {
-      id: 3,
-      city: 'Nice',
-      country: 'France',
-      days: 2,
-      activities: 4,
-      color: '#FFD4A3',
-    },
-  ];
+  useEffect(() => {
+    loadTripDetails();
+  }, [tripId]);
+
+  const loadTripDetails = async () => {
+    try {
+      setLoading(true);
+      const response = await tripService.getTripById(tripId);
+      if (response.success && response.data) {
+        setTrip(response.data);
+      }
+    } catch (error) {
+      console.error('Error loading trip:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'});
+  };
+
+  const calculateDays = (startDate: string, endDate: string) => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const diffTime = Math.abs(end.getTime() - start.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays + 1;
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}>
+            <Icon name="arrow-back" size={24} color={COLORS.black} />
+          </TouchableOpacity>
+          <Text style={styles.title}>Trip Details</Text>
+          <TouchableOpacity style={styles.menuButton}>
+            <Icon name="ellipsis-vertical" size={24} color={COLORS.black} />
+          </TouchableOpacity>
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={COLORS.red} />
+          <Text style={styles.loadingText}>Loading trip details...</Text>
+        </View>
+      </View>
+    );
+  }
+
+  if (!trip) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}>
+            <Icon name="arrow-back" size={24} color={COLORS.black} />
+          </TouchableOpacity>
+          <Text style={styles.title}>Trip Details</Text>
+          <TouchableOpacity style={styles.menuButton}>
+            <Icon name="ellipsis-vertical" size={24} color={COLORS.black} />
+          </TouchableOpacity>
+        </View>
+        <View style={styles.emptyContainer}>
+          <Icon name="alert-circle-outline" size={64} color={COLORS.lightGray} />
+          <Text style={styles.emptyTitle}>Trip not found</Text>
+          <TouchableOpacity
+            style={styles.emptyButton}
+            onPress={() => navigation.goBack()}>
+            <Text style={styles.emptyButtonText}>Go Back</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -58,20 +117,26 @@ const TripDetailsScreen = ({navigation, route}: any) => {
       {/* Trip Header */}
       <View style={styles.tripHeader}>
         <View style={styles.tripHeaderContent}>
-          <Text style={styles.tripName}>Paris Adventure</Text>
-          <Text style={styles.tripDates}>Oct 15 - Oct 20, 2023</Text>
+          <Text style={styles.tripName}>{trip.title}</Text>
+          <Text style={styles.tripDates}>
+            {formatDate(trip.start_date)} - {formatDate(trip.end_date)}
+          </Text>
           <View style={styles.tripStats}>
             <View style={styles.statItem}>
               <Icon name="calendar-outline" size={16} color={COLORS.red} />
-              <Text style={styles.statText}>6 days</Text>
+              <Text style={styles.statText}>
+                {calculateDays(trip.start_date, trip.end_date)} day{calculateDays(trip.start_date, trip.end_date) > 1 ? 's' : ''}
+              </Text>
             </View>
+            {trip.description && (
+              <View style={styles.statItem}>
+                <Icon name="document-text-outline" size={16} color={COLORS.red} />
+                <Text style={styles.statText}>{trip.description}</Text>
+              </View>
+            )}
             <View style={styles.statItem}>
-              <Icon name="location-outline" size={16} color={COLORS.red} />
-              <Text style={styles.statText}>3 cities</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Icon name="walk-outline" size={16} color={COLORS.red} />
-              <Text style={styles.statText}>12 activities</Text>
+              <Icon name="pricetag-outline" size={16} color={COLORS.red} />
+              <Text style={styles.statText}>{trip.status}</Text>
             </View>
           </View>
         </View>
@@ -118,60 +183,18 @@ const TripDetailsScreen = ({navigation, route}: any) => {
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}>
-        {stops.map((stop, index) => (
-          <View key={stop.id} style={styles.stopCard}>
-            <View style={styles.stopHeader}>
-              <View style={[styles.stopIcon, {backgroundColor: stop.color}]}>
-                <Icon name="location" size={24} color={COLORS.white} />
-              </View>
-              <View style={styles.stopInfo}>
-                <Text style={styles.stopCity}>{stop.city}</Text>
-                <Text style={styles.stopCountry}>{stop.country}</Text>
-              </View>
-              <TouchableOpacity>
-                <Icon name="ellipsis-horizontal" size={20} color={COLORS.gray} />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.stopDetails}>
-              <View style={styles.stopDetailItem}>
-                <Icon
-                  name="time-outline"
-                  size={16}
-                  color={COLORS.textSecondary}
-                />
-                <Text style={styles.stopDetailText}>
-                  {stop.days} day{stop.days > 1 ? 's' : ''}
-                </Text>
-              </View>
-              <View style={styles.stopDetailItem}>
-                <Icon
-                  name="list-outline"
-                  size={16}
-                  color={COLORS.textSecondary}
-                />
-                <Text style={styles.stopDetailText}>
-                  {stop.activities} activities
-                </Text>
-              </View>
-            </View>
-
-            <TouchableOpacity style={styles.viewActivitiesButton}>
-              <Text style={styles.viewActivitiesText}>View Activities</Text>
-              <Icon name="chevron-forward" size={16} color={COLORS.red} />
-            </TouchableOpacity>
-
-            {index < stops.length - 1 && <View style={styles.connector} />}
-          </View>
-        ))}
-
-        {/* Add Stop Button */}
-        <TouchableOpacity
-          style={styles.addStopButton}
-          onPress={() => navigation.navigate('Search')}>
-          <Icon name="add-circle-outline" size={24} color={COLORS.red} />
-          <Text style={styles.addStopText}>Add Another Stop</Text>
-        </TouchableOpacity>
+        <View style={styles.noDataContainer}>
+          <Icon name="map-outline" size={64} color={COLORS.lightGray} />
+          <Text style={styles.noDataTitle}>No itinerary yet</Text>
+          <Text style={styles.noDataSubtitle}>
+            Start adding destinations and activities to your trip
+          </Text>
+          <TouchableOpacity style={styles.addButton}>
+            <Icon name="add" size={20} color={COLORS.white} />
+            <Text style={styles.addButtonText}>Add Destination</Text>
+          </TouchableOpacity>
+        </View>
+        {/* Future: Map itinerary sections here when implemented */}
       </ScrollView>
 
       {/* Bottom Actions */}
@@ -383,6 +406,72 @@ const styles = StyleSheet.create({
   },
   budgetButton: {
     flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: SIZES.md,
+    fontSize: SIZES.body,
+    color: COLORS.textSecondary,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: SIZES.padding,
+  },
+  emptyTitle: {
+    fontSize: SIZES.h3,
+    fontWeight: 'bold',
+    color: COLORS.black,
+    marginTop: SIZES.md,
+  },
+  emptyButton: {
+    marginTop: SIZES.lg,
+    paddingHorizontal: SIZES.xl,
+    paddingVertical: SIZES.md,
+    backgroundColor: COLORS.red,
+    borderRadius: SIZES.radiusMd,
+  },
+  emptyButtonText: {
+    fontSize: SIZES.body,
+    color: COLORS.white,
+    fontWeight: '600',
+  },
+  noDataContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: SIZES.xl * 2,
+  },
+  noDataTitle: {
+    fontSize: SIZES.h3,
+    fontWeight: 'bold',
+    color: COLORS.black,
+    marginTop: SIZES.md,
+  },
+  noDataSubtitle: {
+    fontSize: SIZES.body,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    marginTop: SIZES.sm,
+    marginBottom: SIZES.lg,
+  },
+  addButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SIZES.sm,
+    paddingHorizontal: SIZES.lg,
+    paddingVertical: SIZES.md,
+    backgroundColor: COLORS.red,
+    borderRadius: SIZES.radiusMd,
+  },
+  addButtonText: {
+    fontSize: SIZES.body,
+    color: COLORS.white,
+    fontWeight: '600',
   },
 });
 

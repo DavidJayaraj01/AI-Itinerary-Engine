@@ -136,6 +136,15 @@ export const endpoints = {
     tripSummary: `${API_URL}/ai/trip-summary`,
     chatAssistant: `${API_URL}/ai/chat`,
   },
+
+  // Cities
+  cities: {
+    search: `${API_URL}/cities/search`,
+  },
+};
+
+export const API_ENDPOINTS = {
+  CITIES: `${API_URL}/cities`,
 };
 
 export default API_URL;
