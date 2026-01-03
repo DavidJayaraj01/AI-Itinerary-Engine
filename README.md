@@ -126,6 +126,14 @@ Refer to the respective READMEs:
 
 ---
 
+## 📸 Application Screenshots
+
+![Trips Table](images/trips_table.jpeg)
+![User Trip Link](images/user_trip_link.jpeg)
+![Profile Screen](images/profile_screen.jpeg)
+![My Trips Screen](images/my_trips_screen.jpeg)
+![Trips Table](images/trips_table.jpeg)
+
 ## 🤝 Contributing
 
 1. Fork the repository  
