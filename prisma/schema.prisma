@@ -1,0 +1,346 @@
+// This is your Prisma schema file
+// Learn more: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// USERS & AUTHENTICATION
+// ============================================
+
+model User {
+  id              Int      @id @default(autoincrement())
+  first_name      String
+  last_name       String
+  email           String   @unique
+  phone           String?
+  city            String?
+  country         String?
+  password_hash   String
+  additional_info String?  @db.Text
+  avatar_url      String?
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  // Relations
+  trips              Trip[]
+  saved_places       SavedPlace[]
+  user_trip_links    UserTripLink[]
+  calendar_events    CalendarEvent[]
+  community_posts    CommunityPost[]
+  community_comments CommunityComment[]
+  community_reactions CommunityReaction[]
+
+  @@map("users")
+}
+
+// ============================================
+// TRIPS & ITINERARIES
+// ============================================
+
+model Trip {
+  id           Int       @id @default(autoincrement())
+  user_id      Int
+  title        String
+  description  String?   @db.Text
+  start_date   DateTime
+  end_date     DateTime
+  status       String    @default("planning") // planning, confirmed, ongoing, completed, cancelled
+  total_budget Decimal?  @db.Decimal(10, 2)
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+
+  // Relations
+  user               User               @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  itinerary_sections ItinerarySection[]
+  trip_budgets       TripBudget[]
+  expenses           Expense[]
+  user_trip_links    UserTripLink[]
+  calendar_events    CalendarEvent[]
+  community_posts    CommunityPost[]
+  trip_stats         TripStats?
+
+  @@index([user_id])
+  @@index([status])
+  @@map("trips")
+}
+
+model ItinerarySection {
+  id            Int       @id @default(autoincrement())
+  trip_id       Int
+  day_number    Int
+  section_order Int
+  title         String
+  description   String?   @db.Text
+  location_name String?
+  city          String?
+  start_time    DateTime?
+  end_time      DateTime?
+  estimated_cost Decimal? @db.Decimal(10, 2)
+  notes         String?   @db.Text
+
+  // Relations
+  trip             Trip             @relation(fields: [trip_id], references: [id], onDelete: Cascade)
+  itinerary_items  ItineraryItem[]
+
+  @@index([trip_id])
+  @@index([day_number])
+  @@map("itinerary_sections")
+}
+
+model ItineraryItem {
+  id                   Int       @id @default(autoincrement())
+  itinerary_section_id Int
+  activity_id          Int?
+  title                String
+  description          String?   @db.Text
+  location_name        String?
+  start_time           DateTime?
+  end_time             DateTime?
+  cost                 Decimal?  @db.Decimal(10, 2)
+  notes                String?   @db.Text
+
+  // Relations
+  itinerary_section ItinerarySection @relation(fields: [itinerary_section_id], references: [id], onDelete: Cascade)
+  activity          Activity?        @relation(fields: [activity_id], references: [id], onDelete: SetNull)
+  expenses          Expense[]
+  calendar_events   CalendarEvent[]
+
+  @@index([itinerary_section_id])
+  @@index([activity_id])
+  @@map("itinerary_items")
+}
+
+// ============================================
+// ACTIVITIES & SEARCH
+// ============================================
+
+model Activity {
+  id                   Int      @id @default(autoincrement())
+  name                 String
+  city                 String
+  country              String
+  category             String
+  description          String?  @db.Text
+  address              String?
+  latitude             Decimal? @db.Decimal(10, 7)
+  longitude            Decimal? @db.Decimal(11, 7)
+  avg_duration_minutes Int?
+  avg_cost             Decimal? @db.Decimal(10, 2)
+  rating               Decimal? @db.Decimal(3, 2)
+  created_at           DateTime @default(now())
+
+  // Relations
+  itinerary_items ItineraryItem[]
+  saved_places    SavedPlace[]
+  activity_tags   ActivityTagMap[]
+
+  @@index([city])
+  @@index([country])
+  @@index([category])
+  @@map("activities")
+}
+
+model ActivityTag {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+
+  // Relations
+  activities ActivityTagMap[]
+
+  @@map("activity_tags")
+}
+
+model ActivityTagMap {
+  activity_id Int
+  tag_id      Int
+
+  // Relations
+  activity Activity    @relation(fields: [activity_id], references: [id], onDelete: Cascade)
+  tag      ActivityTag @relation(fields: [tag_id], references: [id], onDelete: Cascade)
+
+  @@id([activity_id, tag_id])
+  @@map("activity_tag_map")
+}
+
+// ============================================
+// BUDGETS & EXPENSES
+// ============================================
+
+model TripBudget {
+  id             Int      @id @default(autoincrement())
+  trip_id        Int
+  category       String
+  planned_amount Decimal  @db.Decimal(10, 2)
+  notes          String?  @db.Text
+
+  // Relations
+  trip Trip @relation(fields: [trip_id], references: [id], onDelete: Cascade)
+
+  @@index([trip_id])
+  @@map("trip_budgets")
+}
+
+model Expense {
+  id                Int      @id @default(autoincrement())
+  trip_id           Int
+  itinerary_item_id Int?
+  category          String
+  description       String
+  amount            Decimal  @db.Decimal(10, 2)
+  currency          String   @default("USD")
+  expense_date      DateTime
+  created_at        DateTime @default(now())
+
+  // Relations
+  trip           Trip           @relation(fields: [trip_id], references: [id], onDelete: Cascade)
+  itinerary_item ItineraryItem? @relation(fields: [itinerary_item_id], references: [id], onDelete: SetNull)
+
+  @@index([trip_id])
+  @@index([itinerary_item_id])
+  @@index([expense_date])
+  @@map("expenses")
+}
+
+// ============================================
+// USER PROFILE & CALENDAR
+// ============================================
+
+model SavedPlace {
+  id          Int      @id @default(autoincrement())
+  user_id     Int
+  activity_id Int
+  note        String?  @db.Text
+  created_at  DateTime @default(now())
+
+  // Relations
+  user     User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  activity Activity @relation(fields: [activity_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, activity_id])
+  @@index([user_id])
+  @@map("saved_places")
+}
+
+model UserTripLink {
+  id            Int    @id @default(autoincrement())
+  user_id       Int
+  trip_id       Int
+  relation_type String // owner, collaborator, viewer
+
+  // Relations
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  trip Trip @relation(fields: [trip_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, trip_id])
+  @@index([user_id])
+  @@index([trip_id])
+  @@map("user_trip_links")
+}
+
+model CalendarEvent {
+  id               Int       @id @default(autoincrement())
+  user_id          Int
+  trip_id          Int?
+  itinerary_item_id Int?
+  title            String
+  start_datetime   DateTime
+  end_datetime     DateTime
+  location         String?
+  notes            String?   @db.Text
+
+  // Relations
+  user           User           @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  trip           Trip?          @relation(fields: [trip_id], references: [id], onDelete: Cascade)
+  itinerary_item ItineraryItem? @relation(fields: [itinerary_item_id], references: [id], onDelete: SetNull)
+
+  @@index([user_id])
+  @@index([trip_id])
+  @@index([start_datetime])
+  @@map("calendar_events")
+}
+
+// ============================================
+// COMMUNITY
+// ============================================
+
+model CommunityPost {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  trip_id    Int?
+  title      String
+  content    String   @db.Text
+  city       String?
+  country    String?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  // Relations
+  user      User                @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  trip      Trip?               @relation(fields: [trip_id], references: [id], onDelete: SetNull)
+  comments  CommunityComment[]
+  reactions CommunityReaction[]
+
+  @@index([user_id])
+  @@index([trip_id])
+  @@index([city])
+  @@index([created_at])
+  @@map("community_posts")
+}
+
+model CommunityComment {
+  id         Int      @id @default(autoincrement())
+  post_id    Int
+  user_id    Int
+  content    String   @db.Text
+  created_at DateTime @default(now())
+
+  // Relations
+  post CommunityPost @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  user User          @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([post_id])
+  @@index([user_id])
+  @@map("community_comments")
+}
+
+model CommunityReaction {
+  id            Int      @id @default(autoincrement())
+  post_id       Int
+  user_id       Int
+  reaction_type String   // like, love, helpful, inspiring
+  created_at    DateTime @default(now())
+
+  // Relations
+  post CommunityPost @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  user User          @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([post_id, user_id, reaction_type])
+  @@index([post_id])
+  @@map("community_reactions")
+}
+
+// ============================================
+// ANALYTICS
+// ============================================
+
+model TripStats {
+  id                 Int      @id @default(autoincrement())
+  trip_id            Int      @unique
+  total_days         Int
+  total_expenses     Decimal  @db.Decimal(10, 2)
+  total_activities   Int
+  avg_cost_per_day   Decimal  @db.Decimal(10, 2)
+  last_calculated_at DateTime @default(now())
+
+  // Relations
+  trip Trip @relation(fields: [trip_id], references: [id], onDelete: Cascade)
+
+  @@map("trip_stats")
+}
