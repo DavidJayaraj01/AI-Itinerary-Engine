@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useMemo} from 'react';
 import {
   View,
   Text,
@@ -7,12 +7,27 @@ import {
   TouchableOpacity,
   Image,
   TextInput,
+  Modal,
+  Alert,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/Ionicons';
+import { Ionicons } from '@expo/vector-icons';
 import {COLORS, SIZES, SHADOWS} from '../constants/theme';
 
 const DashboardScreen = ({navigation}: any) => {
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Filter, Sort, and Group By states
+  const [showGroupByModal, setShowGroupByModal] = useState(false);
+  const [showFilterModal, setShowFilterModal] = useState(false);
+  const [showSortByModal, setShowSortByModal] = useState(false);
+  
+  const [groupBy, setGroupBy] = useState<'none' | 'status' | 'date' | 'destination'>('none');
+  const [sortBy, setSortBy] = useState<'name' | 'date' | 'status'>('date');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [filters, setFilters] = useState({
+    status: 'all', // 'all' | 'completed' | 'archived' | 'ongoing'
+    dateRange: 'all', // 'all' | 'thisYear' | 'lastYear' | 'custom'
+  });
 
   const regionalDestinations = [
     {id: 1, name: 'Kyoto', country: 'JAPAN', color: '#D4A574'},
@@ -27,6 +42,7 @@ const DashboardScreen = ({navigation}: any) => {
       dates: 'Oct 15 - Oct 20, 2023',
       status: 'Completed',
       color: '#FFB84D',
+      year: 2023,
     },
     {
       id: 2,
@@ -34,6 +50,7 @@ const DashboardScreen = ({navigation}: any) => {
       dates: 'Aug 05 - Aug 18, 2023',
       status: 'Completed',
       color: '#FFC870',
+      year: 2023,
     },
     {
       id: 3,
@@ -41,8 +58,92 @@ const DashboardScreen = ({navigation}: any) => {
       dates: 'Jan 10 - Jan 14, 2023',
       status: 'Archived',
       color: '#C4B896',
+      year: 2023,
+    },
+    {
+      id: 4,
+      name: 'Tokyo Experience',
+      dates: 'Mar 05 - Mar 12, 2024',
+      status: 'Completed',
+      color: '#A8D5B0',
+      year: 2024,
+    },
+    {
+      id: 5,
+      name: 'London Exploration',
+      dates: 'Dec 20 - Dec 28, 2024',
+      status: 'Ongoing',
+      color: '#B8A8D5',
+      year: 2024,
     },
   ];
+
+  // Process trips based on filters, sorting, and grouping
+  const processedTrips = useMemo(() => {
+    let filtered = [...previousTrips];
+
+    // Apply filters
+    if (filters.status !== 'all') {
+      filtered = filtered.filter(trip => trip.status.toLowerCase() === filters.status.toLowerCase());
+    }
+
+    if (filters.dateRange !== 'all') {
+      const currentYear = new Date().getFullYear();
+      if (filters.dateRange === 'thisYear') {
+        filtered = filtered.filter(trip => trip.year === currentYear);
+      } else if (filters.dateRange === 'lastYear') {
+        filtered = filtered.filter(trip => trip.year === currentYear - 1);
+      }
+    }
+
+    // Apply sorting
+    filtered.sort((a, b) => {
+      let comparison = 0;
+      switch (sortBy) {
+        case 'name':
+          comparison = a.name.localeCompare(b.name);
+          break;
+        case 'date':
+          comparison = a.year - b.year;
+          break;
+        case 'status':
+          comparison = a.status.localeCompare(b.status);
+          break;
+      }
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
+
+    // Apply grouping
+    if (groupBy === 'none') {
+      return [{ title: null, data: filtered }];
+    }
+
+    const grouped = filtered.reduce((acc: any, trip) => {
+      let key = '';
+      switch (groupBy) {
+        case 'status':
+          key = trip.status;
+          break;
+        case 'date':
+          key = trip.year.toString();
+          break;
+        case 'destination':
+          key = trip.name.split(' ')[0]; // Use first word as destination group
+          break;
+      }
+
+      if (!acc[key]) {
+        acc[key] = [];
+      }
+      acc[key].push(trip);
+      return acc;
+    }, {});
+
+    return Object.keys(grouped).map(key => ({
+      title: key,
+      data: grouped[key],
+    }));
+  }, [previousTrips, filters, sortBy, sortOrder, groupBy]);
 
   return (
     <View style={styles.container}>
@@ -57,11 +158,6 @@ const DashboardScreen = ({navigation}: any) => {
               Global<Text style={styles.logoTextRed}>Trotter</Text>
             </Text>
           </View>
-          <TouchableOpacity style={styles.profileButton}>
-            <View style={styles.profileAvatar}>
-              <Icon name="person" size={20} color={COLORS.white} />
-            </View>
-          </TouchableOpacity>
         </View>
 
         {/* Featured Destination */}
@@ -80,7 +176,7 @@ const DashboardScreen = ({navigation}: any) => {
 
         {/* Search Bar */}
         <View style={styles.searchContainer}>
-          <Icon
+          <Ionicons
             name="search"
             size={20}
             color={COLORS.gray}
@@ -94,22 +190,28 @@ const DashboardScreen = ({navigation}: any) => {
             onChangeText={setSearchQuery}
           />
           <TouchableOpacity style={styles.searchButton}>
-            <Icon name="arrow-forward" size={20} color={COLORS.white} />
+            <Ionicons name="arrow-forward" size={20} color={COLORS.white} />
           </TouchableOpacity>
         </View>
 
         {/* Filter Buttons */}
         <View style={styles.filterContainer}>
-          <TouchableOpacity style={styles.filterButton}>
-            <Icon name="options-outline" size={18} color={COLORS.black} />
-            <Text style={styles.filterText}>Group by</Text>
+          <TouchableOpacity 
+            style={[styles.filterButton, groupBy !== 'none' && styles.filterButtonActive]}
+            onPress={() => setShowGroupByModal(true)}>
+            <Ionicons name="options-outline" size={18} color={groupBy !== 'none' ? COLORS.white : COLORS.black} />
+            <Text style={[styles.filterText, groupBy !== 'none' && styles.filterTextActive]}>Group by</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.filterButton}>
-            <Icon name="funnel-outline" size={18} color={COLORS.black} />
-            <Text style={styles.filterText}>Filter</Text>
+          <TouchableOpacity 
+            style={[styles.filterButton, (filters.status !== 'all' || filters.dateRange !== 'all') && styles.filterButtonActive]}
+            onPress={() => setShowFilterModal(true)}>
+            <Ionicons name="funnel-outline" size={18} color={(filters.status !== 'all' || filters.dateRange !== 'all') ? COLORS.white : COLORS.black} />
+            <Text style={[styles.filterText, (filters.status !== 'all' || filters.dateRange !== 'all') && styles.filterTextActive]}>Filter</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.filterButton}>
-            <Icon name="swap-vertical-outline" size={18} color={COLORS.black} />
+          <TouchableOpacity 
+            style={styles.filterButton}
+            onPress={() => setShowSortByModal(true)}>
+            <Ionicons name="swap-vertical-outline" size={18} color={COLORS.black} />
             <Text style={styles.filterText}>Sort by</Text>
           </TouchableOpacity>
         </View>
@@ -142,28 +244,35 @@ const DashboardScreen = ({navigation}: any) => {
           <Text style={styles.sectionTitle}>Previous Trips</Text>
         </View>
 
-        {previousTrips.map(trip => (
-          <TouchableOpacity key={trip.id} style={styles.tripCard}>
-            <View
-              style={[styles.tripImage, {backgroundColor: trip.color}]}
-            />
-            <View style={styles.tripInfo}>
-              <Text style={styles.tripName}>{trip.name}</Text>
-              <Text style={styles.tripDates}>{trip.dates}</Text>
-              <View style={styles.statusBadge}>
-                <Text style={styles.statusText}>{trip.status}</Text>
-              </View>
-            </View>
-            <View style={styles.tripIcons}>
-              <Icon name="people" size={20} color={COLORS.gray} />
-              <Icon
-                name="heart"
-                size={20}
-                color={COLORS.gray}
-                style={{marginLeft: 8}}
-              />
-            </View>
-          </TouchableOpacity>
+        {processedTrips.map((section, sectionIndex) => (
+          <View key={sectionIndex}>
+            {section.title && (
+              <Text style={styles.groupTitle}>{section.title}</Text>
+            )}
+            {section.data.map((trip: any) => (
+              <TouchableOpacity key={trip.id} style={styles.tripCard}>
+                <View
+                  style={[styles.tripImage, {backgroundColor: trip.color}]}
+                />
+                <View style={styles.tripInfo}>
+                  <Text style={styles.tripName}>{trip.name}</Text>
+                  <Text style={styles.tripDates}>{trip.dates}</Text>
+                  <View style={styles.statusBadge}>
+                    <Text style={styles.statusText}>{trip.status}</Text>
+                  </View>
+                </View>
+                <View style={styles.tripIcons}>
+                  <Ionicons name="people" size={20} color={COLORS.gray} />
+                  <Ionicons
+                    name="heart"
+                    size={20}
+                    color={COLORS.gray}
+                    style={{marginLeft: 8}}
+                  />
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
         ))}
       </ScrollView>
 
@@ -171,9 +280,180 @@ const DashboardScreen = ({navigation}: any) => {
       <TouchableOpacity
         style={styles.fab}
         onPress={() => navigation.navigate('CreateTrip')}>
-        <Icon name="add" size={24} color={COLORS.white} />
+        <Ionicons name="add" size={24} color={COLORS.white} />
         <Text style={styles.fabText}>Plan a trip</Text>
       </TouchableOpacity>
+
+      {/* Group By Modal */}
+      <Modal
+        visible={showGroupByModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowGroupByModal(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Group By</Text>
+            {[
+              { key: 'none', label: 'No Grouping' },
+              { key: 'status', label: 'Status' },
+              { key: 'date', label: 'Year' },
+              { key: 'destination', label: 'Destination' },
+            ].map((option) => (
+              <TouchableOpacity
+                key={option.key}
+                style={[
+                  styles.modalOption,
+                  groupBy === option.key && styles.modalOptionSelected
+                ]}
+                onPress={() => {
+                  setGroupBy(option.key as any);
+                  setShowGroupByModal(false);
+                }}>
+                <Text style={[
+                  styles.modalOptionText,
+                  groupBy === option.key && styles.modalOptionTextSelected
+                ]}>{option.label}</Text>
+                {groupBy === option.key && (
+                  <Ionicons name="checkmark" size={20} color={COLORS.white} />
+                )}
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity
+              style={styles.modalCloseButton}
+              onPress={() => setShowGroupByModal(false)}>
+              <Text style={styles.modalCloseText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Filter Modal */}
+      <Modal
+        visible={showFilterModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowFilterModal(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Filter Options</Text>
+            
+            <Text style={styles.filterSectionTitle}>Status</Text>
+            {[
+              { key: 'all', label: 'All Trips' },
+              { key: 'completed', label: 'Completed' },
+              { key: 'ongoing', label: 'Ongoing' },
+              { key: 'archived', label: 'Archived' },
+            ].map((option) => (
+              <TouchableOpacity
+                key={option.key}
+                style={[
+                  styles.modalOption,
+                  filters.status === option.key && styles.modalOptionSelected
+                ]}
+                onPress={() => setFilters(prev => ({ ...prev, status: option.key }))}>
+                <Text style={[
+                  styles.modalOptionText,
+                  filters.status === option.key && styles.modalOptionTextSelected
+                ]}>{option.label}</Text>
+                {filters.status === option.key && (
+                  <Ionicons name="checkmark" size={20} color={COLORS.white} />
+                )}
+              </TouchableOpacity>
+            ))}
+
+            <Text style={styles.filterSectionTitle}>Date Range</Text>
+            {[
+              { key: 'all', label: 'All Years' },
+              { key: 'thisYear', label: 'This Year' },
+              { key: 'lastYear', label: 'Last Year' },
+            ].map((option) => (
+              <TouchableOpacity
+                key={option.key}
+                style={[
+                  styles.modalOption,
+                  filters.dateRange === option.key && styles.modalOptionSelected
+                ]}
+                onPress={() => setFilters(prev => ({ ...prev, dateRange: option.key }))}>
+                <Text style={[
+                  styles.modalOptionText,
+                  filters.dateRange === option.key && styles.modalOptionTextSelected
+                ]}>{option.label}</Text>
+                {filters.dateRange === option.key && (
+                  <Ionicons name="checkmark" size={20} color={COLORS.white} />
+                )}
+              </TouchableOpacity>
+            ))}
+
+            <TouchableOpacity
+              style={styles.modalCloseButton}
+              onPress={() => setShowFilterModal(false)}>
+              <Text style={styles.modalCloseText}>Done</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Sort By Modal */}
+      <Modal
+        visible={showSortByModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowSortByModal(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Sort By</Text>
+            {[
+              { key: 'name', label: 'Name' },
+              { key: 'date', label: 'Date' },
+              { key: 'status', label: 'Status' },
+            ].map((option) => (
+              <TouchableOpacity
+                key={option.key}
+                style={[
+                  styles.modalOption,
+                  sortBy === option.key && styles.modalOptionSelected
+                ]}
+                onPress={() => setSortBy(option.key as any)}>
+                <Text style={[
+                  styles.modalOptionText,
+                  sortBy === option.key && styles.modalOptionTextSelected
+                ]}>{option.label}</Text>
+                {sortBy === option.key && (
+                  <Ionicons name="checkmark" size={20} color={COLORS.white} />
+                )}
+              </TouchableOpacity>
+            ))}
+
+            <Text style={styles.filterSectionTitle}>Order</Text>
+            {[
+              { key: 'asc', label: 'Ascending' },
+              { key: 'desc', label: 'Descending' },
+            ].map((option) => (
+              <TouchableOpacity
+                key={option.key}
+                style={[
+                  styles.modalOption,
+                  sortOrder === option.key && styles.modalOptionSelected
+                ]}
+                onPress={() => setSortOrder(option.key as any)}>
+                <Text style={[
+                  styles.modalOptionText,
+                  sortOrder === option.key && styles.modalOptionTextSelected
+                ]}>{option.label}</Text>
+                {sortOrder === option.key && (
+                  <Ionicons name="checkmark" size={20} color={COLORS.white} />
+                )}
+              </TouchableOpacity>
+            ))}
+
+            <TouchableOpacity
+              style={styles.modalCloseButton}
+              onPress={() => setShowSortByModal(false)}>
+              <Text style={styles.modalCloseText}>Done</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -188,7 +468,7 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
     alignItems: 'center',
     padding: SIZES.padding,
     paddingTop: SIZES.xl,
@@ -211,17 +491,6 @@ const styles = StyleSheet.create({
   },
   logoTextRed: {
     color: COLORS.red,
-  },
-  profileButton: {
-    padding: SIZES.xs,
-  },
-  profileAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: COLORS.red,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   featuredCard: {
     margin: SIZES.padding,
@@ -398,6 +667,87 @@ const styles = StyleSheet.create({
     fontSize: SIZES.body,
     fontWeight: '600',
     color: COLORS.white,
+  },
+  // Filter button styles
+  filterButtonActive: {
+    backgroundColor: COLORS.red,
+  },
+  filterTextActive: {
+    color: COLORS.white,
+  },
+  // Group title style
+  groupTitle: {
+    fontSize: SIZES.body,
+    fontWeight: 'bold',
+    color: COLORS.black,
+    marginVertical: SIZES.md,
+    marginHorizontal: SIZES.padding,
+    paddingBottom: SIZES.xs,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.lightGray,
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: COLORS.white,
+    borderTopLeftRadius: SIZES.radiusLg,
+    borderTopRightRadius: SIZES.radiusLg,
+    paddingHorizontal: SIZES.padding,
+    paddingTop: SIZES.lg,
+    paddingBottom: SIZES.xl,
+    maxHeight: '80%',
+  },
+  modalTitle: {
+    fontSize: SIZES.h3,
+    fontWeight: 'bold',
+    color: COLORS.black,
+    marginBottom: SIZES.lg,
+    textAlign: 'center',
+  },
+  modalOption: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: SIZES.md,
+    paddingHorizontal: SIZES.md,
+    borderRadius: SIZES.radiusMd,
+    marginBottom: SIZES.xs,
+    backgroundColor: COLORS.lightGray,
+  },
+  modalOptionSelected: {
+    backgroundColor: COLORS.red,
+  },
+  modalOptionText: {
+    fontSize: SIZES.body,
+    color: COLORS.black,
+    fontWeight: '500',
+  },
+  modalOptionTextSelected: {
+    color: COLORS.white,
+    fontWeight: '600',
+  },
+  modalCloseButton: {
+    marginTop: SIZES.lg,
+    paddingVertical: SIZES.md,
+    backgroundColor: COLORS.lightGray,
+    borderRadius: SIZES.radiusMd,
+    alignItems: 'center',
+  },
+  modalCloseText: {
+    fontSize: SIZES.body,
+    fontWeight: '600',
+    color: COLORS.black,
+  },
+  filterSectionTitle: {
+    fontSize: SIZES.body,
+    fontWeight: 'bold',
+    color: COLORS.black,
+    marginTop: SIZES.lg,
+    marginBottom: SIZES.md,
   },
 });
 

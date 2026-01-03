@@ -7,8 +7,11 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Image,
+  Alert,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/Ionicons';
+import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import {COLORS, SIZES, SHADOWS} from '../constants/theme';
 import CustomInput from '../components/inputs/CustomInput';
 import PrimaryButton from '../components/buttons/PrimaryButton';
@@ -18,18 +21,91 @@ const SignUpScreen = ({navigation}: any) => {
     firstName: '',
     lastName: '',
     email: '',
+    password: '',
+    confirmPassword: '',
     phone: '',
     city: '',
     country: '',
     additionalInfo: '',
   });
+  const [avatar, setAvatar] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const updateField = (field: string, value: string) => {
     setFormData(prev => ({...prev, [field]: value}));
   };
 
+  const pickImage = async () => {
+    // Request permissions
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Denied', 'We need camera roll permissions to set your avatar.');
+      return;
+    }
+
+    // Launch image picker
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      setAvatar(result.assets[0].uri);
+    }
+  };
+
+  const takePhoto = async () => {
+    // Request permissions
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Denied', 'We need camera permissions to take your photo.');
+      return;
+    }
+
+    // Launch camera
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      setAvatar(result.assets[0].uri);
+    }
+  };
+
+  const showImagePicker = () => {
+    Alert.alert(
+      'Select Avatar',
+      'Choose how you would like to set your profile picture',
+      [
+        { text: 'Camera', onPress: takePhoto },
+        { text: 'Gallery', onPress: pickImage },
+        { text: 'Cancel', style: 'cancel' },
+      ]
+    );
+  };
+
   const handleSignUp = async () => {
+    // Basic validation
+    if (!formData.firstName || !formData.lastName || !formData.email || !formData.password) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      alert('Passwords do not match');
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      alert('Password must be at least 6 characters long');
+      return;
+    }
+
     setLoading(true);
     // Simulate API call
     setTimeout(() => {
@@ -50,20 +126,24 @@ const SignUpScreen = ({navigation}: any) => {
           <TouchableOpacity
             style={styles.backButton}
             onPress={() => navigation.goBack()}>
-            <Icon name="arrow-back" size={24} color={COLORS.black} />
+            <Ionicons name="arrow-back" size={24} color={COLORS.black} />
           </TouchableOpacity>
 
           <Text style={styles.title}>Sign Up</Text>
 
           {/* Avatar */}
-          <View style={styles.avatarContainer}>
+          <TouchableOpacity style={styles.avatarContainer} onPress={showImagePicker}>
             <View style={styles.avatar}>
-              <Icon name="person-add-outline" size={40} color={COLORS.gray} />
+              {avatar ? (
+                <Image source={{ uri: avatar }} style={styles.avatarImage} />
+              ) : (
+                <Ionicons name="person-add-outline" size={40} color={COLORS.gray} />
+              )}
             </View>
             <View style={styles.editBadge}>
-              <Icon name="camera" size={18} color={COLORS.white} />
+              <Ionicons name="camera" size={18} color={COLORS.white} />
             </View>
-          </View>
+          </TouchableOpacity>
 
           {/* Form */}
           <View style={styles.formContainer}>
@@ -94,6 +174,24 @@ const SignUpScreen = ({navigation}: any) => {
               icon="mail-outline"
               keyboardType="email-address"
               autoCapitalize="none"
+            />
+
+            <CustomInput
+              label="Password"
+              placeholder="Enter your password"
+              value={formData.password}
+              onChangeText={value => updateField('password', value)}
+              icon="lock-closed-outline"
+              secureTextEntry
+            />
+
+            <CustomInput
+              label="Confirm Password"
+              placeholder="Confirm your password"
+              value={formData.confirmPassword}
+              onChangeText={value => updateField('confirmPassword', value)}
+              icon="lock-closed-outline"
+              secureTextEntry
             />
 
             <CustomInput
@@ -196,6 +294,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     ...SHADOWS.medium,
+    overflow: 'hidden',
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 50,
   },
   editBadge: {
     position: 'absolute',

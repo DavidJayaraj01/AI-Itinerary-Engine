@@ -14,17 +14,20 @@ import CustomInput from '../components/inputs/CustomInput';
 import PrimaryButton from '../components/buttons/PrimaryButton';
 
 const LoginScreen = ({navigation}: any) => {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [errors, setErrors] = useState({username: '', password: ''});
+  const [errors, setErrors] = useState({email: '', password: ''});
   const [loading, setLoading] = useState(false);
 
   const validateForm = () => {
     let valid = true;
-    const newErrors = {username: '', password: ''};
+    const newErrors = {email: '', password: ''};
 
-    if (!username.trim()) {
-      newErrors.username = 'Username is required';
+    if (!email.trim()) {
+      newErrors.email = 'Email is required';
+      valid = false;
+    } else if (!/\S+@\S+\.\S+/.test(email)) {
+      newErrors.email = 'Please enter a valid email address';
       valid = false;
     }
 
@@ -77,13 +80,14 @@ const LoginScreen = ({navigation}: any) => {
           {/* Form */}
           <View style={styles.formContainer}>
             <CustomInput
-              label="Username"
-              placeholder="Enter your username"
-              value={username}
-              onChangeText={setUsername}
-              icon="person-outline"
-              error={errors.username}
+              label="Email Address"
+              placeholder="Enter your email address"
+              value={email}
+              onChangeText={setEmail}
+              icon="mail-outline"
+              error={errors.email}
               autoCapitalize="none"
+              keyboardType="email-address"
             />
 
             <CustomInput

@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   Image,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/Ionicons';
+import { Ionicons } from '@expo/vector-icons';
 import {COLORS, SIZES, SHADOWS} from '../constants/theme';
 import CustomInput from '../components/inputs/CustomInput';
 import PrimaryButton from '../components/buttons/PrimaryButton';
@@ -59,16 +59,18 @@ const CreateTripScreen = ({navigation}: any) => {
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}>
-          <Icon name="arrow-back" size={24} color={COLORS.black} />
+          <Ionicons name="arrow-back" size={24} color={COLORS.black} />
         </TouchableOpacity>
         <View style={styles.logoContainer}>
           <Text style={styles.logoText}>
             Global<Text style={styles.logoTextRed}>Trotter</Text>
           </Text>
         </View>
-        <TouchableOpacity style={styles.profileButton}>
+        <TouchableOpacity 
+          style={styles.profileButton}
+          onPress={() => navigation.navigate('Profile')}>
           <View style={styles.profileAvatar}>
-            <Icon name="person" size={18} color={COLORS.white} />
+            <Ionicons name="person" size={18} color={COLORS.white} />
           </View>
         </TouchableOpacity>
       </View>
@@ -85,7 +87,7 @@ const CreateTripScreen = ({navigation}: any) => {
         {/* Form */}
         <View style={styles.formContainer}>
           <View style={styles.inputContainer}>
-            <Icon
+            <Ionicons
               name="location"
               size={20}
               color={COLORS.red}
@@ -103,7 +105,7 @@ const CreateTripScreen = ({navigation}: any) => {
 
           <View style={styles.dateContainer}>
             <View style={styles.inputContainer}>
-              <Icon
+              <Ionicons
                 name="calendar"
                 size={20}
                 color={COLORS.red}
@@ -113,13 +115,13 @@ const CreateTripScreen = ({navigation}: any) => {
                 <Text style={styles.inputLabel}>START DATE</Text>
                 <TouchableOpacity style={styles.dateInput}>
                   <Text style={styles.dateText}>{startDate}</Text>
-                  <Icon name="calendar-outline" size={20} color={COLORS.gray} />
+                  <Ionicons name="calendar-outline" size={20} color={COLORS.gray} />
                 </TouchableOpacity>
               </View>
             </View>
 
             <View style={styles.inputContainer}>
-              <Icon
+              <Ionicons
                 name="calendar"
                 size={20}
                 color={COLORS.red}
@@ -129,7 +131,7 @@ const CreateTripScreen = ({navigation}: any) => {
                 <Text style={styles.inputLabel}>END DATE</Text>
                 <TouchableOpacity style={styles.dateInput}>
                   <Text style={styles.dateText}>mm/dd/yyyy</Text>
-                  <Icon name="calendar-outline" size={20} color={COLORS.gray} />
+                  <Ionicons name="calendar-outline" size={20} color={COLORS.gray} />
                 </TouchableOpacity>
               </View>
             </View>
@@ -155,7 +157,7 @@ const CreateTripScreen = ({navigation}: any) => {
                   {backgroundColor: suggestion.color},
                 ]}>
                 {/* Placeholder for actual images */}
-                <Icon name="image-outline" size={40} color={COLORS.white} />
+                <Ionicons name="image-outline" size={40} color={COLORS.white} />
               </View>
               <Text style={styles.suggestionName}>{suggestion.name}</Text>
               <Text style={styles.suggestionLocation}>
